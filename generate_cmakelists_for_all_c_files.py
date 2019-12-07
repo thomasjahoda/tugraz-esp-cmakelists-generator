@@ -1,22 +1,30 @@
 import os
 from pathlib import Path
 
-file_content = """cmake_minimum_required(VERSION 3.10)
-project(esp_ku C)
+
+root_directory = Path("..")
+BLACKLISTED_PATHS = [
+    Path(),
+]
+BLACKLISTED_DIRECTORY_NAMES = [
+    ".git",
+    "cmake-build-debug",
+]
+
+project_name = root_directory.resolve().absolute().name
+cmakelists_file_header = f"""cmake_minimum_required(VERSION 3.10)
+project({project_name} C)
 
 set(CMAKE_C_STANDARD 11)
 
 # generated executables:
 """
 
-BLACKLISTED_DIRECTORY_NAMES = [
-    ".git",
-    "cmake-build-debug",
-]
-
 
 def _find_c_source_files(directory: Path):
     for file in directory.iterdir():
+        if file in BLACKLISTED_PATHS:
+            continue
         if file.is_file():
             if file.name.endswith('.c'):
                 yield file
@@ -25,11 +33,12 @@ def _find_c_source_files(directory: Path):
                 yield from _find_c_source_files(file)
 
 
-for cfile in _find_c_source_files(Path(".")):
+for cfile in _find_c_source_files(root_directory):
     print(cfile)
+    file_relative_to_project_root = cfile.relative_to(root_directory)
 
-    relative_source_file_path = "/".join(cfile.parts)
-    executable_name = "_".join(cfile.parts)
-    file_content += f"""add_executable("{executable_name}" "{relative_source_file_path}")\n"""
+    relative_source_file_path = "/".join(file_relative_to_project_root.parts)
+    executable_name = "_".join(file_relative_to_project_root.parts)
+    cmakelists_file_header += f"""add_executable("{executable_name}" "{relative_source_file_path}")\n"""
 
-Path("CMakeLists.txt").write_text(file_content, encoding="utf-8")
+root_directory.joinpath("CMakeLists.txt").write_text(cmakelists_file_header, encoding="utf-8")
