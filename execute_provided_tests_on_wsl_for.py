@@ -1,11 +1,8 @@
 import os
-import subprocess
 import sys
 from pathlib import Path
 
-import invoke
 from fabric import Connection
-from tjpy_subprocess_util.execution import SubProcessExecution
 
 if len(sys.argv) != 2:
     print("provide the assignment name for which to execute the tests")
@@ -47,8 +44,11 @@ finally:
     ssh_connection.run(f"""cp {test_execution_assignment_directory}/testscripts/results/* {wsl_path_for_project_root_directory_on_windows_path_str}/""")
 ssh_connection.run("""echo "=== END OF WSL-SIDE COMMANDS/OUTPUT ===" """)
 
-print("executed successfully")
 
 if report_html_file.exists():
+    print("Executed tests successfully.")
     print(f"Opening {report_html_file.name}")
     os.startfile(str(report_html_file))
+else:
+    print("Something went wrong. Check logs.")
+    exit(1)
