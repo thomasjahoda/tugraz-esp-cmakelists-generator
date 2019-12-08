@@ -1,3 +1,5 @@
+import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -30,14 +32,23 @@ print("Executing SSH commands:")
 print(wsl_path_for_assignment_directory_on_windows_path_str)
 print(test_execution_base_directory)
 
+results_json_file = absolute_project_root_directory.joinpath("results.json")
+report_html_file = absolute_project_root_directory.joinpath("report.html")
+results_json_file.unlink(missing_ok=True)
+report_html_file.unlink(missing_ok=True)
+
 ssh_connection = Connection('tjahoda@localhost')
 ssh_connection.run("""echo "=== START OF WSL-SIDE COMMANDS/OUTPUT ===" """)
 ssh_connection.run(f"""mkdir {test_execution_base_directory}""", warn=True)
 ssh_connection.run(f"""rsync -r {wsl_path_for_assignment_directory_on_windows_path_str} {test_execution_base_directory}""")
 try:
-    ssh_connection.run(f"""cd {test_execution_assignment_directory} && make test""")
+    ssh_connection.run(f"""cd {test_execution_assignment_directory} && make test""", warn=True)
 finally:
     ssh_connection.run(f"""cp {test_execution_assignment_directory}/testscripts/results/* {wsl_path_for_project_root_directory_on_windows_path_str}/""")
 ssh_connection.run("""echo "=== END OF WSL-SIDE COMMANDS/OUTPUT ===" """)
 
 print("executed successfully")
+
+if report_html_file.exists():
+    print(f"Opening {report_html_file.name}")
+    os.startfile(str(report_html_file))
