@@ -9,6 +9,7 @@ BLACKLISTED_PATHS = [
 BLACKLISTED_DIRECTORY_NAMES = [
     ".git",
     "cmake-build-debug",
+    "cmake-build-cygwin-debug",
 ]
 
 project_name = root_directory.resolve().absolute().name
