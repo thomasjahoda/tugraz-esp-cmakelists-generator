@@ -1,4 +1,5 @@
 import os
+import shutil
 import sys
 from pathlib import Path
 
@@ -22,27 +23,41 @@ wsl_path_for_assignment_directory_on_windows = Path("/mnt").joinpath(assignment_
 wsl_path_for_assignment_directory_on_windows_path_str = "/mnt/c/" + (
     "/".join(wsl_path_for_assignment_directory_on_windows.parts[1:]))
 
-test_execution_base_directory = "~/test_execution"
-test_execution_assignment_directory = f"{test_execution_base_directory}/{assignment_directory_name}"
+test_execution_base_directory_str = "~/test_execution"
+test_execution_assignment_directory_str = f"{test_execution_base_directory_str}/{assignment_directory_name}"
 print("Executing SSH commands:")
 print(wsl_path_for_assignment_directory_on_windows_path_str)
-print(test_execution_base_directory)
+print(test_execution_base_directory_str)
 
-results_json_file = absolute_project_root_directory.joinpath("results.json")
-report_html_file = absolute_project_root_directory.joinpath("report.html")
+results_json_file = assignment_directory.joinpath("testscripts/results/results.json")
+report_html_file = assignment_directory.joinpath("testscripts/results/report.html")
 results_json_file.unlink(missing_ok=True)
 report_html_file.unlink(missing_ok=True)
 
+
+def delete_contents(directory: Path):
+    for file in directory.iterdir():
+        if file.name == '.gitkeep':
+            continue
+        if file.is_dir():
+            shutil.rmtree(file)
+        else:
+            file.unlink()
+
+
 ssh_connection = Connection(ssh_connection_string)
 ssh_connection.run('echo "=== START OF WSL-SIDE COMMANDS/OUTPUT ==="')
-ssh_connection.run(f"""mkdir {test_execution_base_directory}""", warn=True)
-ssh_connection.run(f'rsync -r {wsl_path_for_assignment_directory_on_windows_path_str} {test_execution_base_directory}')
+ssh_connection.run(f"""mkdir {test_execution_base_directory_str}""", warn=True)
+ssh_connection.run(f'rsync -r {wsl_path_for_assignment_directory_on_windows_path_str} {test_execution_base_directory_str}')
 try:
-    ssh_connection.run(f"""cd {test_execution_assignment_directory} && make test""", warn=True)
+    ssh_connection.run(f"""cd {test_execution_assignment_directory_str} && make test""", warn=True)
 finally:
-    ssh_connection.run(f"""cp {test_execution_assignment_directory}/testscripts/results/* {wsl_path_for_project_root_directory_on_windows_path_str}/""")
+    delete_contents(assignment_directory.joinpath("testscripts/tmp"))
+    ssh_connection.run(
+        f"""cp {test_execution_assignment_directory_str}/testscripts/results/* "{wsl_path_for_assignment_directory_on_windows_path_str}/testscripts/results/" """)
+    ssh_connection.run(
+        f"""cp -r {test_execution_assignment_directory_str}/testscripts/tmp/* "{wsl_path_for_assignment_directory_on_windows_path_str}/testscripts/tmp/" """)
 ssh_connection.run("""echo "=== END OF WSL-SIDE COMMANDS/OUTPUT ===" """)
-
 
 if report_html_file.exists():
     print("Executed tests successfully.")
