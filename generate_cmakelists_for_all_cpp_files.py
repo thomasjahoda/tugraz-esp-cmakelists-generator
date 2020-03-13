@@ -13,7 +13,11 @@ BLACKLISTED_DIRECTORY_NAMES = [
 ]
 
 project_name = root_directory.resolve().absolute().name
-cmakelists_file_header = f"""cmake_minimum_required(VERSION 3.10)
+cmakelists_file_header = f"""
+# !!! GENERATED - do not edit!!!
+# Execute generate_cmakelists_for_all_cpp_files.py
+
+cmake_minimum_required(VERSION 3.10)
 project({project_name})
 
 set(CMAKE_C_STANDARD 11)
